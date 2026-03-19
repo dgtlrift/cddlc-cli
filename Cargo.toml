@@ -1,0 +1,17 @@
+[package]
+name        = "cddlc-cli"
+version     = "0.1.0"
+edition     = "2021"
+description = "Command-line CDDL compiler"
+license     = "MIT OR Apache-2.0"
+
+[[bin]]
+name = "cddlc"
+path = "src/main.rs"
+
+[dependencies]
+cddlc-parser  = { path = "../cddlc-parser" }
+cddlc-ir      = { path = "../cddlc-ir" }
+cddlc-codegen = { path = "../cddlc-codegen" }
+backend-rust  = { path = "../backend-rust" }
+clap          = { version = "4", features = ["derive"] }
