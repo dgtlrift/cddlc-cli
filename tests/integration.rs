@@ -195,12 +195,9 @@ fn test_generates_rust_file() {
     let (dir, stderr, ok) = generate(&fixture("sensor.cddl"), &[]);
     assert!(ok, "codegen failed: {stderr}");
 
-    // Should have written a .rs file
-    let entries: Vec<_> = fs::read_dir(&dir).unwrap()
-        .filter_map(|e| e.ok())
-        .filter(|e| e.path().extension().map(|x| x == "rs").unwrap_or(false))
-        .collect();
-    assert!(!entries.is_empty(), "no .rs file generated in {}", dir.display());
+    // Should have written a crate with src/lib.rs
+    let lib_rs = find_rs_recursive(&dir);
+    assert!(lib_rs.is_some(), "no lib.rs generated under {}", dir.display());
 }
 
 #[test]
@@ -266,7 +263,9 @@ fn test_no_std_flag_emits_no_std() {
     assert!(ok, "{stderr}");
 
     let content = fs::read_to_string(find_rs_file(&dir)).unwrap();
-    assert!(content.contains("#![no_std]"));
+    // no_std is emitted as a cfg_attr feature gate so the crate works in both envs
+    assert!(content.contains("cfg_attr") && content.contains("no_std"),
+        "expected cfg_attr no_std in:\n{content}");
 }
 
 #[test]
@@ -338,11 +337,24 @@ fn test_max_array_flag() {
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 fn find_rs_file(dir: &Path) -> PathBuf {
-    fs::read_dir(dir).unwrap()
-        .filter_map(|e| e.ok())
-        .find(|e| e.path().extension().map(|x| x == "rs").unwrap_or(false))
-        .unwrap_or_else(|| panic!("no .rs file found in {}", dir.display()))
-        .path()
+    // Output is now a crate: <dir>/<module>-cbor/src/lib.rs
+    // Walk recursively to find lib.rs
+    find_rs_recursive(dir)
+        .unwrap_or_else(|| panic!("no lib.rs found under {}", dir.display()))
+}
+
+fn find_rs_recursive(dir: &Path) -> Option<PathBuf> {
+    for entry in fs::read_dir(dir).ok()?.flatten() {
+        let path = entry.path();
+        if path.is_dir() {
+            if let Some(found) = find_rs_recursive(&path) {
+                return Some(found);
+            }
+        } else if path.file_name().map(|n| n == "lib.rs").unwrap_or(false) {
+            return Some(path);
+        }
+    }
+    None
 }
 
 fn run_generate(input: &Path, extra: &[&str]) -> (PathBuf, String, bool) {
