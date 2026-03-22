@@ -73,7 +73,7 @@ pub enum Lang {
     C,
     Cpp,
     Csharp,
-    Python,
+    Nodejs,
 }
 
 #[derive(ValueEnum, Debug, Clone, Copy, PartialEq, Eq)]
@@ -90,7 +90,7 @@ impl From<Lang> for cddlc_codegen::Language {
             Lang::C      => cddlc_codegen::Language::C,
             Lang::Cpp    => cddlc_codegen::Language::Cpp,
             Lang::Csharp => cddlc_codegen::Language::CSharp,
-            Lang::Python => cddlc_codegen::Language::Python,
+            Lang::Nodejs => cddlc_codegen::Language::Python, // reuses Python slot
         }
     }
 }

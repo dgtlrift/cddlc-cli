@@ -136,11 +136,10 @@ fn run(cli: &Cli) -> Result<(), Box<dyn std::error::Error>> {
             backend.generate(ir, &opts)
                 .map_err(|e| e.to_string())?
         }
-        other => {
-            return Err(format!(
-                "language '{other:?}' is not yet implemented; \
-                 currently supported: rust, c, cpp, csharp"
-            ).into());
+        args::Lang::Nodejs => {
+            let backend = backend_nodejs::NodeJsBackend;
+            backend.generate(ir, &opts)
+                .map_err(|e| e.to_string())?
         }
     };
 
