@@ -108,7 +108,6 @@ fn test_unsupported_lang_fails() {
     let input = fixture("sensor.cddl");
     let (_, stderr, ok) = run(&[input.to_str().unwrap(), "--lang", "cobol", "--dry-run"]);
     assert!(!ok);
-    // clap emits its own "invalid value" message
     assert!(stderr.contains("cobol") || stderr.contains("invalid") || stderr.contains("error"),
         "expected error for unknown lang, got: {stderr}");
 }
