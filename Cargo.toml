@@ -16,4 +16,5 @@ cddlc-codegen = { path = "../cddlc-codegen" }
 backend-rust  = { path = "../backend-rust" }
 backend-c     = { path = "../backend-c" }
 backend-cpp   = { path = "../backend-cpp" }
+backend-csharp = { path = "../backend-csharp" }
 clap          = { version = "4", features = ["derive"] }

@@ -121,10 +121,25 @@ fn run(cli: &Cli) -> Result<(), Box<dyn std::error::Error>> {
             backend.generate(ir, &opts)
                 .map_err(|e| e.to_string())?
         }
+        args::Lang::C => {
+            let backend = backend_c::CBackend;
+            backend.generate(ir, &opts)
+                .map_err(|e| e.to_string())?
+        }
+        args::Lang::Cpp => {
+            let backend = backend_cpp::CppBackend;
+            backend.generate(ir, &opts)
+                .map_err(|e| e.to_string())?
+        }
+        args::Lang::Csharp => {
+            let backend = backend_csharp::CSharpBackend;
+            backend.generate(ir, &opts)
+                .map_err(|e| e.to_string())?
+        }
         other => {
             return Err(format!(
                 "language '{other:?}' is not yet implemented; \
-                 currently supported: rust"
+                 currently supported: rust, c, cpp, csharp"
             ).into());
         }
     };
