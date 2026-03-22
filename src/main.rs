@@ -20,6 +20,22 @@ fn main() {
     }
 }
 
+fn parse_interop_langs(s: &str) -> backend_interop::InteropLangs {
+    let mut langs = backend_interop::InteropLangs::default();
+    for part in s.split(',') {
+        match part.trim() {
+            "rust"   => langs.rust   = true,
+            "c"      => langs.c      = true,
+            "cpp"    => langs.cpp    = true,
+            "csharp" => langs.csharp = true,
+            "nodejs" => langs.nodejs = true,
+            "python" => langs.python = true,
+            _        => {}
+        }
+    }
+    langs
+}
+
 fn run(cli: &Cli) -> Result<(), Box<dyn std::error::Error>> {
     // ── Validate flags ────────────────────────────────────────────────────────
 
@@ -154,16 +170,29 @@ fn run(cli: &Cli) -> Result<(), Box<dyn std::error::Error>> {
 
     for file in &output.files {
         let dest = cli.output.join(&file.path);
-
-        // Create subdirectories if needed
         if let Some(parent) = dest.parent() {
             std::fs::create_dir_all(parent)?;
         }
-
         std::fs::write(&dest, &file.content)?;
-
-        if cli.verbose || true {  // always print generated files
+        if cli.verbose || true {
             eprintln!("cddlc: wrote {}", dest.display());
+        }
+    }
+
+    // ── Interop test generation ───────────────────────────────────────────────
+
+    if cli.interop {
+        let langs = parse_interop_langs(&cli.interop_langs);
+        let interop_files = backend_interop::generate(ir, &langs, &opts);
+        for file in &interop_files {
+            let dest = cli.output.join(&file.path);
+            if let Some(parent) = dest.parent() {
+                std::fs::create_dir_all(parent)?;
+            }
+            std::fs::write(&dest, &file.content)?;
+            if cli.verbose || true {
+                eprintln!("cddlc: wrote {}", dest.display());
+            }
         }
     }
 

@@ -58,6 +58,15 @@ pub struct Cli {
     #[arg(long, value_name = "DIR")]
     pub include_dir: Vec<PathBuf>,
 
+    /// Generate cross-language interoperability test vectors and harnesses
+    #[arg(long)]
+    pub interop: bool,
+
+    /// Comma-separated list of languages for interop harnesses (default: all)
+    /// e.g. --interop-langs rust,python,nodejs
+    #[arg(long, default_value = "rust,c,cpp,csharp,nodejs,python")]
+    pub interop_langs: String,
+
     /// Parse and analyze only — do not write output files
     #[arg(long)]
     pub dry_run: bool,
