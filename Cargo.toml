@@ -18,4 +18,5 @@ backend-c     = { path = "../backend-c" }
 backend-cpp   = { path = "../backend-cpp" }
 backend-csharp = { path = "../backend-csharp" }
 backend-nodejs = { path = "../backend-nodejs" }
+backend-python = { path = "../backend-python" }
 clap          = { version = "4", features = ["derive"] }

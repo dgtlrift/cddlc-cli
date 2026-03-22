@@ -141,6 +141,11 @@ fn run(cli: &Cli) -> Result<(), Box<dyn std::error::Error>> {
             backend.generate(ir, &opts)
                 .map_err(|e| e.to_string())?
         }
+        args::Lang::Python => {
+            let backend = backend_python::PythonBackend;
+            backend.generate(ir, &opts)
+                .map_err(|e| e.to_string())?
+        }
     };
 
     // ── Write output files ────────────────────────────────────────────────────
