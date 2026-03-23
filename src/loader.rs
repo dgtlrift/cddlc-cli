@@ -6,7 +6,7 @@
 use std::collections::HashSet;
 use std::path::{Path, PathBuf};
 
-use cddlc_parser::{parse_cddl, CddlModule, ParseWarning, PragmaValue, Rule, Spanned};
+use cddlc_parser::{parse_cddl, parse_cddl_debug, format_parse_diagnostic, CddlModule, ParseWarning, PragmaValue, Rule, Spanned};
 
 /// Error from import resolution.
 #[derive(Debug)]
@@ -48,13 +48,15 @@ pub fn load(
     entry_path:   &Path,
     include_dirs: &[PathBuf],
     verbose:      bool,
+    debug_parse:  bool,
 ) -> Result<LoadedModule, LoadError> {
     let mut loader = Loader {
         include_dirs,
-        seen:     HashSet::new(),
-        stack:    Vec::new(),
-        warnings: Vec::new(),
+        seen:        HashSet::new(),
+        stack:       Vec::new(),
+        warnings:    Vec::new(),
         verbose,
+        debug_parse,
     };
 
     let canonical = entry_path.canonicalize()
@@ -67,12 +69,11 @@ pub fn load(
 
 struct Loader<'a> {
     include_dirs: &'a [PathBuf],
-    /// Canonical paths already fully loaded (de-dup).
-    seen:     HashSet<PathBuf>,
-    /// Current import stack for cycle detection.
-    stack:    Vec<PathBuf>,
-    warnings: Vec<ParseWarning>,
-    verbose:  bool,
+    seen:        HashSet<PathBuf>,
+    stack:       Vec<PathBuf>,
+    warnings:    Vec<ParseWarning>,
+    verbose:     bool,
+    debug_parse: bool,
 }
 
 impl<'a> Loader<'a> {
@@ -103,7 +104,18 @@ impl<'a> Loader<'a> {
         let src = std::fs::read_to_string(canonical)
             .map_err(|e| LoadError::Io { path: canonical.to_owned(), source: e })?;
 
-        let result = parse_cddl(&src, canonical.to_owned())?;
+        let result = if self.debug_parse {
+            parse_cddl_debug(&src, canonical.to_owned())
+        } else {
+            parse_cddl(&src, canonical.to_owned())
+        }.map_err(|e| {
+            // On debug_parse the diagnostic was already printed; on normal
+            // mode print a compact version here
+            if !self.debug_parse {
+                eprintln!("{}", format_parse_diagnostic(&src, &canonical.to_owned(), &e));
+            }
+            LoadError::Parse(e)
+        })?;
         self.warnings.extend(result.warnings);
         let module = result.value;
 

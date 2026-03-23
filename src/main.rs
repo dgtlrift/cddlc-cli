@@ -56,7 +56,7 @@ fn run(cli: &Cli) -> Result<(), Box<dyn std::error::Error>> {
     let mut primary_path  = PathBuf::from("module.cddl");
 
     for (i, input) in cli.inputs.iter().enumerate() {
-        let loaded = load(input, &cli.include_dir, cli.verbose)
+        let loaded = load(input, &cli.include_dir, cli.verbose, cli.debug_parse)
             .map_err(|e| e.to_string())?;
 
         all_warnings.extend(loaded.warnings);

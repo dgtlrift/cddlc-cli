@@ -58,6 +58,10 @@ pub struct Cli {
     #[arg(long, value_name = "DIR")]
     pub include_dir: Vec<PathBuf>,
 
+    /// Print rich parse diagnostics on failure (also enabled by CDDLC_TRACE=1)
+    #[arg(long)]
+    pub debug_parse: bool,
+
     /// Generate cross-language interoperability test vectors and harnesses
     #[arg(long)]
     pub interop: bool,
