@@ -121,6 +121,10 @@ fn run(cli: &Cli) -> Result<(), Box<dyn std::error::Error>> {
 
     let opts = CodegenOptions {
         lang:        cli.lang.into(),
+        format:      match cli.format {
+            args::Fmt::Cbor => cddlc_codegen::Format::Cbor,
+            args::Fmt::Json => cddlc_codegen::Format::Json,
+        },
         runtime:     cli.runtime.clone(),
         alloc:       cli.alloc.into(),
         dcbor:       cli.dcbor,

@@ -20,6 +20,10 @@ pub struct Cli {
     #[arg(short, long, default_value = "./generated")]
     pub output: PathBuf,
 
+    /// Serialization format
+    #[arg(long, value_enum, default_value = "cbor")]
+    pub format: Fmt,
+
     /// CBOR runtime library
     ///   rust: minicbor | ciborium | cbor4ii
     ///   c:    tinycbor | nanocbor | zcbor
@@ -88,6 +92,12 @@ pub enum Lang {
     Csharp,
     Nodejs,
     Python,
+}
+
+#[derive(ValueEnum, Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Fmt {
+    Cbor,
+    Json,
 }
 
 #[derive(ValueEnum, Debug, Clone, Copy, PartialEq, Eq)]
