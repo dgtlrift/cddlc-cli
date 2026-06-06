@@ -166,6 +166,11 @@ fn run(cli: &Cli) -> Result<(), Box<dyn std::error::Error>> {
             backend.generate(ir, &opts)
                 .map_err(|e| e.to_string())?
         }
+        args::Lang::Dart => {
+            let backend = backend_dart::DartBackend;
+            backend.generate(ir, &opts)
+                .map_err(|e| e.to_string())?
+        }
     };
 
     // ── Write output files ────────────────────────────────────────────────────
