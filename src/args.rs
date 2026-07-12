@@ -1,13 +1,28 @@
-use clap::{Parser, ValueEnum};
+use clap::{Args, Parser, Subcommand, ValueEnum};
 use std::path::PathBuf;
 
 /// cddlc — CDDL compiler and code generator
 ///
-/// Parses RFC 8610 CDDL schema files and generates serializers/deserializers
-/// for the specified target language.
+/// Parses RFC 8610 CDDL schema files and either generates serializers/
+/// deserializers for a target language, or validates JSON/CBOR data against
+/// the schema.
 #[derive(Parser, Debug)]
 #[command(name = "cddlc", version, about, long_about = None)]
 pub struct Cli {
+    #[command(subcommand)]
+    pub command: Command,
+}
+
+#[derive(Subcommand, Debug)]
+pub enum Command {
+    /// Generate serialization/deserialization code for a target language
+    Generate(GenerateArgs),
+    /// Validate JSON/CBOR documents against a CDDL schema
+    Validate(ValidateArgs),
+}
+
+#[derive(Args, Debug)]
+pub struct GenerateArgs {
     /// One or more .cddl source files (entry points)
     #[arg(required = true, value_name = "INPUT")]
     pub inputs: Vec<PathBuf>,
@@ -80,6 +95,38 @@ pub struct Cli {
     pub dry_run: bool,
 
     /// Verbose output (print resolved types, warnings, file paths)
+    #[arg(short, long)]
+    pub verbose: bool,
+}
+
+#[derive(Args, Debug)]
+pub struct ValidateArgs {
+    /// CDDL schema entry point
+    #[arg(long, value_name = "FILE")]
+    pub cddl: PathBuf,
+
+    /// Type name to validate against (defaults to the schema's root rule —
+    /// the first rule declared in the file)
+    #[arg(long = "type", value_name = "NAME")]
+    pub type_name: Option<String>,
+
+    /// JSON document(s) to validate (repeatable)
+    #[arg(long = "json", value_name = "FILE")]
+    pub json: Vec<PathBuf>,
+
+    /// CBOR document(s) to validate (repeatable)
+    #[arg(long = "cbor", value_name = "FILE")]
+    pub cbor: Vec<PathBuf>,
+
+    /// Additional search paths for imported .cddl files (repeatable)
+    #[arg(long, value_name = "DIR")]
+    pub include_dir: Vec<PathBuf>,
+
+    /// Print rich parse diagnostics on failure (also enabled by CDDLC_TRACE=1)
+    #[arg(long)]
+    pub debug_parse: bool,
+
+    /// Verbose output
     #[arg(short, long)]
     pub verbose: bool,
 }
