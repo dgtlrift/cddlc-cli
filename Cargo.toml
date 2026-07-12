@@ -21,4 +21,7 @@ backend-nodejs = { path = "../backend-nodejs" }
 backend-python = { path = "../backend-python" }
 backend-dart   = { path = "../backend-dart" }
 backend-interop = { path = "../backend-interop" }
+cddlc-validate  = { path = "../cddlc-validate" }
 clap          = { version = "4", features = ["derive"] }
+serde_json    = { workspace = true }
+ciborium      = { workspace = true }

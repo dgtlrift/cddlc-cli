@@ -38,6 +38,7 @@ fn run(args: &[&str]) -> (String, String, bool) {
 /// Run cddlc in --dry-run mode (no output files written).
 fn dry_run(input: &Path, extra: &[&str]) -> (String, String, bool) {
     let mut args = vec![
+        "generate",
         input.to_str().unwrap(),
         "--dry-run",
     ];
@@ -49,6 +50,7 @@ fn dry_run(input: &Path, extra: &[&str]) -> (String, String, bool) {
 fn generate(input: &Path, extra: &[&str]) -> (PathBuf, String, bool) {
     let dir = tempdir();
     let mut args = vec![
+        "generate",
         input.to_str().unwrap(),
         "-o", dir.to_str().unwrap(),
     ];
@@ -76,10 +78,27 @@ fn test_help_flag() {
     let (stdout, _, ok) = run(&["--help"]);
     assert!(ok);
     assert!(stdout.contains("cddlc"));
+    assert!(stdout.contains("generate") || stdout.contains("Generate"));
+    assert!(stdout.contains("validate") || stdout.contains("Validate"));
+}
+
+#[test]
+fn test_generate_help_flag() {
+    let (stdout, _, ok) = run(&["generate", "--help"]);
+    assert!(ok);
     assert!(stdout.contains("--lang"));
     assert!(stdout.contains("--output"));
     assert!(stdout.contains("--no-std"));
     assert!(stdout.contains("--dcbor"));
+}
+
+#[test]
+fn test_validate_help_flag() {
+    let (stdout, _, ok) = run(&["validate", "--help"]);
+    assert!(ok);
+    assert!(stdout.contains("--cddl"));
+    assert!(stdout.contains("--json"));
+    assert!(stdout.contains("--cbor"));
 }
 
 #[test]
@@ -97,7 +116,7 @@ fn test_missing_input_fails() {
 
 #[test]
 fn test_nonexistent_input_fails() {
-    let (_, stderr, ok) = run(&["nonexistent.cddl", "--dry-run"]);
+    let (_, stderr, ok) = run(&["generate", "nonexistent.cddl", "--dry-run"]);
     assert!(!ok);
     assert!(stderr.contains("error") || stderr.contains("nonexistent"));
 }
@@ -106,7 +125,7 @@ fn test_nonexistent_input_fails() {
 fn test_unsupported_lang_fails() {
     // clap rejects unknown enum values before our code runs
     let input = fixture("sensor.cddl");
-    let (_, stderr, ok) = run(&[input.to_str().unwrap(), "--lang", "cobol", "--dry-run"]);
+    let (_, stderr, ok) = run(&["generate", input.to_str().unwrap(), "--lang", "cobol", "--dry-run"]);
     assert!(!ok);
     assert!(stderr.contains("cobol") || stderr.contains("invalid") || stderr.contains("error"),
         "expected error for unknown lang, got: {stderr}");
@@ -115,7 +134,7 @@ fn test_unsupported_lang_fails() {
 #[test]
 fn test_no_std_requires_rust() {
     let input = fixture("sensor.cddl");
-    let (_, stderr, ok) = run(&[input.to_str().unwrap(), "--lang", "c", "--no-std", "--dry-run"]);
+    let (_, stderr, ok) = run(&["generate", input.to_str().unwrap(), "--lang", "c", "--no-std", "--dry-run"]);
     assert!(!ok);
     assert!(stderr.contains("no-std") || stderr.contains("rust"));
 }
@@ -301,6 +320,7 @@ fn test_output_dir_created() {
     let input = fixture("sensor.cddl");
 
     let (_, stderr, ok) = run(&[
+        "generate",
         input.to_str().unwrap(),
         "-o", output.to_str().unwrap(),
     ]);
@@ -356,9 +376,66 @@ fn find_rs_recursive(dir: &Path) -> Option<PathBuf> {
     None
 }
 
+// ── validate ─────────────────────────────────────────────────────────────────
+
+#[test]
+fn test_validate_json_ok() {
+    let tmp = tempdir();
+    let data = tmp.join("valid.json");
+    fs::write(&data, r#"{"id":1,"label":"a","value":1.5}"#).unwrap();
+
+    let (stdout, stderr, ok) = run(&[
+        "validate", "--cddl", fixture("sensor.cddl").to_str().unwrap(),
+        "--json", data.to_str().unwrap(),
+    ]);
+    assert!(ok, "{stderr}");
+    assert!(stdout.contains("OK"), "{stdout}");
+}
+
+#[test]
+fn test_validate_json_fail_exit_code_and_message() {
+    let tmp = tempdir();
+    let data = tmp.join("invalid.json");
+    // missing required 'value' field
+    fs::write(&data, r#"{"id":1,"label":"a"}"#).unwrap();
+
+    let (stdout, _stderr, ok) = run(&[
+        "validate", "--cddl", fixture("sensor.cddl").to_str().unwrap(),
+        "--json", data.to_str().unwrap(),
+    ]);
+    assert!(!ok, "expected non-zero exit for a failing validation");
+    assert!(stdout.contains("FAIL"), "{stdout}");
+    assert!(stdout.contains("value"), "expected mention of missing field 'value':\n{stdout}");
+}
+
+#[test]
+fn test_validate_explicit_type_flag() {
+    let tmp = tempdir();
+    let data = tmp.join("status.json");
+    fs::write(&data, r#""warn""#).unwrap();
+
+    let (stdout, stderr, ok) = run(&[
+        "validate", "--cddl", fixture("sensor.cddl").to_str().unwrap(),
+        "--type", "status",
+        "--json", data.to_str().unwrap(),
+    ]);
+    assert!(ok, "{stderr}");
+    assert!(stdout.contains("OK"), "{stdout}");
+}
+
+#[test]
+fn test_validate_no_data_files_errors() {
+    let (_, stderr, ok) = run(&[
+        "validate", "--cddl", fixture("sensor.cddl").to_str().unwrap(),
+    ]);
+    assert!(!ok);
+    assert!(stderr.contains("--json") || stderr.contains("--cbor"), "{stderr}");
+}
+
 fn run_generate(input: &Path, extra: &[&str]) -> (PathBuf, String, bool) {
     let dir = tempdir();
     let mut args = vec![
+        "generate",
         input.to_str().unwrap(),
         "-o", dir.to_str().unwrap(),
     ];
