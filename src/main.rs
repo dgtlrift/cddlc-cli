@@ -7,6 +7,7 @@ use std::process;
 use clap::Parser;
 
 use args::{Cli, Command, GenerateArgs, ValidateArgs};
+mod build_info;
 use cddlc_codegen::{Backend, CodegenOptions};
 use cddlc_ir::{lower, IrModule};
 use loader::load;
@@ -147,6 +148,18 @@ fn run_generate(args: &GenerateArgs) -> Result<bool, Box<dyn std::error::Error>>
         namespace:   args.namespace.clone(),
         max_array:   args.max_array,
         max_str:     args.max_str,
+        provenance:  build_info::provenance(&args.inputs),
+    };
+
+    // Each type's and field's CDDL source, in its documentation (dgtlrift/cddlc#9),
+    // the paths relative to where cddlc runs.
+    let annotated;
+    let ir = if args.no_source_comments {
+        ir
+    } else {
+        let base = std::env::current_dir().ok().and_then(|d| d.canonicalize().ok());
+        annotated = cddlc_codegen::with_source_docs(ir, base.as_deref());
+        &annotated
     };
 
     let output = match args.lang {

@@ -7,7 +7,7 @@ use std::path::PathBuf;
 /// deserializers for a target language, or validates JSON/CBOR data against
 /// the schema.
 #[derive(Parser, Debug)]
-#[command(name = "cddlc", version, about, long_about = None)]
+#[command(name = "cddlc", version = crate::build_info::VERSION, long_version = crate::build_info::LONG_VERSION, about, long_about = None)]
 pub struct Cli {
     #[command(subcommand)]
     pub command: Command,
@@ -93,6 +93,11 @@ pub struct GenerateArgs {
     /// Parse and analyze only — do not write output files
     #[arg(long)]
     pub dry_run: bool,
+
+    /// Leave out each type's and field's CDDL source line (`cddl: <file>:<line>: <text>`)
+    /// from its documentation comment
+    #[arg(long)]
+    pub no_source_comments: bool,
 
     /// Verbose output (print resolved types, warnings, file paths)
     #[arg(short, long)]
